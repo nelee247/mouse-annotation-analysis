@@ -20,8 +20,10 @@ gtf=Mus_musculus.GRCm38.75_chr1.gtf
 # need to select the annotated features of interest, which is going to be in 3rd column of the GTF file
 # the file is currently spaced with tabs, so need to use cut with tab delimiter to extract the 3rd column
 
+echo "QUESTION 1"
 echo "Number of genes annotated on this chromosome:"
 grep -v "^#" $gtf | awk -F"\t" '$3=="gene"' | wc -l
+echo 
 
 # -------- end of question 1a --------
 
@@ -38,12 +40,12 @@ grep -v "^#" $gtf | awk -F"\t" '$3=="gene"' | wc -l
 # | sed 's/.*gene_biotype "\([^"]*\)".*/\1/' \    # caputre the gene biotype and replace it with just the biotype
 # | sort | uniq -c | sort -rn    # count the occurrences of each biotype and sort by frequency
 
-echo "----------------------------------------"
 echo "Gene biotypes and their counts:"
 grep -v "^#" $gtf \
  | awk -F"\t" '$3=="gene"' \
  | sed 's/.*gene_biotype "\([^"]*\)".*/\1/' \
  | sort | uniq -c | sort -nr
+echo
 
 # -------- end of question 1b --------  
 
@@ -54,6 +56,67 @@ grep -v "^#" $gtf \
 
 echo "Fraction of protein coding genes:"
 echo "1240 of 2027 = 61%"
+echo "----------------------------------------"
 
 # -------- end of question 1c --------
 
+
+# ==============================================================================
+# Question 2 - which genes span the most DNA, and how much of that codes?
+# ==============================================================================
+
+# a. The five protein-coding genes with the largest genomic span
+# grep with specific criteria for "protein-coding" genes
+# for sed function, 
+#   PATTERN:      \t[^\t]*gene_name "\([^"]*\)".*
+#   REPLACEMENT:  \t\1
+#   pattern syntax breakdown:
+#     remember that a regex pattern followed by * is will match zero or more occurrences
+#     \t          : match a tab character
+#     [^\t]*      : match any characters except a tab
+#     \t DOES NOT match a tab character in MacOS, use actual tab character instead
+#     gene_name "  : match the literal string gene_name
+#     \(       : start capturing group
+#     \([^"]*\)    : capture any characters except a quote
+#     ".*         : match the closing quote and the rest of the line
+#     the reason why there is a tab character at the beginning of the replacement
+#     is to preserve the tab-separated format of the GTF file
+
+echo "QUESTION 2"
+echo "The five protein-coding genes with the largest genomic span:"
+grep -v "^#" $gtf \
+ | awk -F"\t" '$3=="gene"' \
+ | grep 'gene_biotype "protein_coding"' \
+ | sed 's/	[^	]*gene_name "\([^"]*\)".*/	\1/' \
+ | awk -F"\t" '{print $5-$4+1"\t"$9"\t"$7}' \
+ | sort -nr | head -5
+echo
+
+# -------- end of question 2a --------
+
+# b. How much of Erbb4 is actually coding?
+# CDS coordinates are repeated for each transcript
+# make sure we are not counting same coding coordinates multiple times
+# sort out unique coding coordinates for Erbb4
+# block END in awk will be used to print the final result after processing all lines
+# if END is not there it will give MULTIPLE lines of sum of coding lengths
+
+echo "Coding coordinates for Erbb4:"
+grep 'gene_name "Erbb4"' $gtf \
+ | awk -F"\t" '$3=="CDS"' \
+ | cut -f4,5 | sort -u \
+ | awk -F"\t" '{total = total + $2 - $1 + 1} END {print total}'
+
+echo
+echo "Total transcripts for Erbb4:"
+grep 'gene_name "Erbb4"' $gtf \
+ | awk -F"\t" '$3=="transcript"' \
+ | wc -l
+
+ # -------- end of question 2b --------
+
+ # c. Percentage of the gene is coding?
+
+echo "Percentage of Erbb4 that is coding:"
+echo "3993 / 1075874 = 0.37%"
+echo "----------------------------------------"
