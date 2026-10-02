@@ -120,3 +120,54 @@ grep 'gene_name "Erbb4"' $gtf \
 echo "Percentage of Erbb4 that is coding:"
 echo "3993 / 1075874 = 0.37%"
 echo "----------------------------------------"
+
+
+# ==============================================================================
+# Question 3
+# ==============================================================================
+
+# a. Rank gene by the number of exon lines. (Top 5)
+# use the previous examples of specific column search
+
+echo "QUESTION 3"
+echo "The top 5 genes by the number of exon lines:"
+grep -v "^#" $gtf \
+ | awk -F"\t" '$3=="exon"' \
+ | sed 's/.*gene_name "\([^"]*\)".*/\1/' \
+ | sort | uniq -c | sort -nr | head -5
+
+# -------- end of question 3a --------
+
+# b. Why is this result wrong. 
+echo "Why the result is misrepresented:"
+echo "The result is wrong because it counts the number of exon lines per gene
+not the number of exons per gene.
+a gene can have multiple exon lines for the same exon due to different transcripts,
+leading to an overestimation of the number of exons."
+
+# grep 'gene_name "Dst"' $gtf | awk -F"\t" '$3=="exon"' | wc -l
+# grep 'gene_name "Dst"' $gtf | awk -F"\t" '$3=="exon"' | cut -f4,5 | sort -u | wc -l
+# grep 'gene_name "Dst"' $gtf | awk -F"\t" '$3=="transcript"' | wc -l
+
+## result:
+## 511 exon lines
+## 126 distinct exons
+##  16 transcripts
+
+# -------- end of question 3b --------
+
+# c. Corrected ranking of genes by the number of exons (not exon lines)
+# need to consider the coordinates of exons to count unique exons per gene
+# we will use the coordinates of exons to count unique exons per gene
+# field 4 = start coordinate of the exon
+# field 5 = end coordinate of the exon
+# field 9 = exon name
+
+echo "The top 5 genes by the number of exons:"
+grep -v "^#" $gtf \
+ | awk -F"\t" '$3=="exon"' \
+ | sed 's/	[^	]*gene_name "\([^"]*\)".*/\t\1/' \
+ | cut -f4,5,9 | sort -u \
+ | cut -f3 | sort | uniq -c | sort -nr | head -5
+
+ # -------- end of question 3c --------
