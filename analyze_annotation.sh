@@ -171,3 +171,17 @@ grep -v "^#" $gtf \
  | cut -f3 | sort | uniq -c | sort -nr | head -5
 
  # -------- end of question 3c --------
+
+
+# ==============================================================================
+# Question 4
+# ==============================================================================
+
+# Attribute column
+grep -v "^#" Mus_musculus.GRCm38.75_chr1.gtf | awk '{print $9}' | sort | uniq -c | head
+grep -v "^#" Mus_musculus.GRCm38.75_chr1.gtf | cut -f9 | head -1
+
+# Counting gene
+grep -c "gene" Mus_musculus.GRCm38.75_chr1.gtf
+grep -v "^#" Mus_musculus.GRCm38.75_chr1.gtf | awk -F"\t" '$3=="gene"' | wc -l
+
